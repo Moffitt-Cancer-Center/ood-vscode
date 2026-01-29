@@ -1,0 +1,175 @@
+<%
+require 'json'
+
+def list_conda_environments
+  begin
+    # Try using conda command
+    output = `conda env list --json`
+    puts "Conda output: #{output}" # Debugging line
+
+    envs = JSON.parse(output)['envs']
+    return envs.map { |env| File.basename(env) } if envs.any?
+  rescue StandardError => e
+    puts "Error fetching environments via conda command: #{e.message}"
+  end
+
+  # If the conda command fails or returns no environments, check the filesystem
+  home_dir = ENV['HOME'] || ENV['USERPROFILE']
+  envs_paths = [
+    File.join(home_dir, 'miniconda3', 'envs'),
+    File.join(home_dir, 'anaconda3', 'envs'),
+    File.join(home_dir, '.conda', 'envs')
+  ]
+
+  all_envs = []
+  envs_paths.each do |envs_path|
+    puts "Checking directory: #{envs_path}" # Debugging line
+    if Dir.exist?(envs_path)
+      found_envs = Dir.entries(envs_path).select do |entry|
+        File.directory?(File.join(envs_path, entry)) && entry != '.' && entry != '..'
+      end
+      all_envs.concat(found_envs) unless found_envs.empty?
+    else
+      puts "Directory does not exist: #{envs_path}" # Debugging line
+    end
+  end
+
+  if all_envs.empty?
+    raise "No conda environments found in any known directories"
+  end
+
+  all_envs
+end
+
+begin
+  environments = list_conda_environments
+  environments_error = nil
+rescue StandardError => e
+  environments = []
+  environments_error = e.message
+end
+
+# Create a hash of environment details (placeholder)
+environments_hash = environments.map { |env| [env, {}] }.to_h
+%>
+
+---
+tile:
+  title: "VSCode"
+  border_color: "light red"
+  sub_caption: "Code smarter, not harder"
+#cluster: "slurm"
+description: |
+  This app will launch VSCode Lab on one Red node.
+
+  **NOTE** - If this is the first time you are starting this new VSCode app,
+  please allow for up to 5 minutes while the container builds. You can check
+  the progress of the build in the 'output.log' file.
+attributes:
+  conda_env:
+    label: "Conda Env"
+    widget: select
+    value: interactive
+    cacheable: false
+    help: |
+      This can be any Conda env you would like to use.
+      <%- if environments_error || environments.blank? -%>
+      <div class="text-danger">Error fetching envs. Contact support!</div>
+      <%- else -%>
+      <%- end -%>
+    options:
+      <% environments.each do |env| %>
+      - [
+          "<%= env %>", "<%= env %>",
+          <%= JSON.generate(environments_hash[env]) %>
+        ]
+      <%- end -%>
+  #extra_jupyter_args: ""
+  working_dir:
+    widget: "path_selector"
+    label: "Working Directory"
+    data-target-file-type: dirs  # Values= files, dirs, or both
+    readonly: false
+    help: "Select your project directory; defaults to $HOME"
+  bc_queue: "red"
+  bc_account: null
+  bc_num_hours:
+    widget: "number_field"
+    label: "Runtime [hours]"
+    help: Number of hours to run
+    value: 1
+    min: 1
+    max: 336
+    step: 1
+  bc_mem:
+    widget: "select"
+    label: "Maximum Memory (GB)"
+    help: Memory to allocate for job
+    value: "1G"
+    options:
+      - ["Reserve 1GB", "1G"]
+      - ["Reserve 2GB", "2G"]
+      - ["Reserve 4GB", "4G"]
+      - ["Reserve 8GB", "8G"]
+      - ["Reserve 16GB", "16G"]
+      - ["Reserve 32GB", "32G"]
+      - ["Reserve 64GB", "64G"]
+      - ["Reserve 128GB", "128G"]
+      - ["Reserve 256GB", "256G"]
+      - ["Reserve 512GB", "512G"]
+      - ["Reserve 768GB", "768G"]
+      - ["Reserve 1024GB", "1024G"]
+  bc_num_cores:
+    widget: "number_field"
+    label: "Number of CPU Cores"
+    help: Number of cores to allocate
+    value: 1
+    min: 1
+    max: 64
+    step: 1
+  bc_num_gpu:
+    widget: "select"
+    label: "GPU:count"
+    options:
+      - ["No GPU required", "0"]
+      - ["Single(1) GPU", "1"]
+    help: |
+       - **none** or **A30:x (e.g. A30:1)**
+  bc_num_slots: 1
+  v_version:
+    display: true
+    widget: "select"
+    label: "VSCode version"
+    options:
+      - ["Latest", "latest"]
+      - ["Latest-ML", "ml"]
+    help: |
+      - **Latest** - Latest Rocker VSCode build from [dockerhub.moffitt.org]
+      - **Latest-ML** - Latest Rocker VSCode ML container
+  qos:
+    label: "QoS (Quality of Service level)"
+    widget: "select"
+    value: "normal"
+    options:
+      - ["Normal (64 cpus, 12hrs)", "normal"]
+      - ["PartSmall (250 cpus, 90 days)", "partsmall"]
+      - ["Small (475 cpus, 90 days)", "small"]
+      - ["Medium (950 cpus, 45 days)", "medium"]
+      - ["Large (1425 cpus, 1 day)", "large"]
+      - ["X-Large (1800 cpus, 4 hrs)", "xlarge"]
+      - ["XX-Large (3000 cpus, 12 hrs)", "xxlarge"]
+
+form:
+  - v_version
+  - conda_env
+  - working_dir
+  - bc_account
+  - bc_queue
+  - bc_num_hours
+  - bc_num_cores
+  - bc_mem
+  - bc_num_gpu
+  - bc_num_slots
+  - qos
+  # - bc_email_on_started
+  #- extra_jupyter_args

@@ -1,61 +1,167 @@
-#!/usr/bin/bash -l
-<%
+#!/usr/bin/env bash
 
+<%
 # Set our working directory.
 working_dir = Pathname.new(context.working_dir)
 
-code_server_version   = context.version
-
-# Ensure that code-server always starts up in either a user defined directory or the home directory.
+# Ensure that code-server always starts in either user defined directory or home directory.
 if ! working_dir.exist?
-    working_dir = Pathname.new(ENV['HOME'])
+	working_dir = Pathname.new(ENV['HOME'])
 elsif working_dir.file?
-    working_dir = working_dir.parent
+	working_dir = working_dir.parent
 end
 %>
 
-CODE_SERVER_DATAROOT="$HOME/.local/share/code-server"
-mkdir -p "$CODE_SERVER_DATAROOT/extensions"
+##################################################################
+#- Function definitions
+##################################################################
+create_log_config() {
+	LOG_CF=$1
+	if [ ! -f "$LOG_CF" ]; then
+		printf "[*]\nlogger-type=file\nlog-dir=/var/log/code-server\n" > ${LOG_CF}
+		printf "log-level=info\n" >> ${LOG_CF}
+	fi
+}
+check_conda_config() {
+	dirs=("$HOME/.conda/envs" "$HOME/miniconda3/envs" "$HOME/anaconda3/envs")
+	for dir in "${dirs[@]}"; do
+		if [ -d "$dir/<%= context.conda_env %>" ]; then
+			export CONDA_ENV="$dir/<%= context.conda_env %>"
+			echo "Found $CONDA_ENV"
+			return 0
+		fi
+	done
+	echo "'<%= context.conda_env %>' not found in specified directories."
+	return 1
+}
 
-# Expose the password to the server.
-export APPTAINERENV_PASSWORD="$password"
-
-# Print compute node.
-echo "$(date): Running on compute node $(hostname):$port"
-
-
-CPP_FILE="<%= working_dir.to_s %>/.vscode/c_cpp_properties.json"
-
-if [[ -f "$CPP_FILE" ]]; then
-    CPP_DIR="${TMPDIR:=/tmp/$USER}/cpp-vscode"
-    mkdir -p "$CPP_DIR"
-    chmod 700 "$CPP_DIR"
-
-    # if the file is empty, let's initialize it
-    [ -s "$CPP_FILE" ] || echo '{"configurations": [{ "name": "Linux", "browse": { "databaseFilename": null }}], "version": 4}' > "$CPP_FILE"
-
-    jq --arg dbfile "$CPP_DIR/cpp-vscode.db" \
-      '.configurations[0].browse.databaseFilename = $dbfile' \
-      "$CPP_FILE" > "$CPP_FILE".new
-
-    mv "$CPP_FILE".new "$CPP_FILE"
-  fi
-
+###################################################################
+ROOT_DIR="<%= session.staged_root %>"
+V_VERSION="<%= context.v_version %>"
+LOG_DIR="${ROOT_DIR}/log"  #  local logging output
+BIN_DIR="${ROOT_DIR}/bin"    # local bin (for session-specific tasks)
+TMP_DIR=$(mktemp -d)    # session-specific /tmp
+JOB_LOG="${LOG_DIR}/job_startup.log"
+VSCODE_DIR=${HOME}/.local/share/code_server
+VSCODE_EXT=${VSCODE_DIR}/extensions
+VSCODE_VAR_LIB=${VSCODE_DIR}/var/lib
+VSCODE_VAR_RUN=${ROOT_DIR}/var/run
+VSCODE_OPT=${VSCODE_DIR}/opt
+VSCODE_ETC=${VSCODE_DIR}/etc
+VSCODE_VAR_LOG=${LOG_DIR}
+#CPP_FILE="${VSCODE_DIR}/c_cpp_properties.json"
 #
-# Start Code Server.
+#if [[ -f "$CPP_FILE" ]]; then
+#	CPP_DIR="${TMPDIR:=/tmp/$USER}/cpp-vscode"
+#	mkdir -p "$CPP_DIR"
+#	chmod 700 "$CPP_DIR"
+#	# if the file is empty, let's initialize it
+#	[ -s "$CPP_FILE" ] || echo '{"configurations": [{ "name": "Linux", "browse": { "databaseFilename": null }}], "version": 4}' > "$CPP_FILE"
+#
+#	jq --arg dbfile "$CPP_DIR/cpp-vscode.db" \
+#		'.configurations[0].browse.databaseFilename = $dbfile' \
+#		"$CPP_FILE" > "$CPP_FILE".new
+#
+#	mv "$CPP_FILE".new "$CPP_FILE"
+#fi
 
-CODESERVER_CONTAINER_URI=docker://dockerhub.moffitt.org/hpc/code-server:${code_server_version}
+# "APPTAINERENV" must preceed anything exported to apptainer environment.
+export APPTAINERENV_VSCODE_PASSWORD="$password"
+export VSCODE_PASSWORD="$password"
+export PASSWORD="$password"
+export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
 
-echo "$(date): Started code-server using ${CODESERVER_CONTAINER_URI}."
+# Initialize environment for execution.
+mkdir -p ${LOG_DIR}
+echo "`date`: Initializing VSCode environment" >> ${JOB_LOG}
+echo "`date`: VSCode Version $V_VERSION" >> ${JOB_LOG}
+echo "`date`: Using docker URI $VSCODE_CONTAINER_URI" >> ${JOB_LOG}
 
-# 
+# setup_env
+setup_env () {
+  source /etc/profile.d/modules.sh
+  export MODULEPATH=$MODULEPATH:/app/eb/modules/all:/app/other/modules
+  module purge
+}
+create_env_config() {
+  ENV_FILE="$VSCODE_ETC/env-vscode/env"
+
+  if [[ ! -f "$ENV_FILE" ]]; then
+    ENV_DIR="$VSCODE_ETC/env-vscode"
+
+    mkdir -p "$ENV_DIR" || { echo "Failed to create directory $ENV_DIR"; exit 1; }
+    touch "$ENV_FILE"
+    chmod 770 "$ENV_DIR" || { echo "Failed to set permissions for $ENV_DIR"; exit 1; }
+
+    # If the file is empty, initialize it
+    if [[ ! -s "$ENV_FILE" ]]; then
+      echo 'export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt' > "$ENV_FILE"
+      echo 'export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt' >> "$ENV_FILE"
+      echo 'export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt' >> "$ENV_FILE"
+    fi
+  fi
+}
+setup_env
+
+####################################################################
+#- workspace_init
+mkdir -p -m 700 \
+	"${VSCODE_DIR}/extensions" \
+	"${VSCODE_ETC}" \
+	"${VSCODE_OPT}" \
+	"${VSCODE_VAR_LOG}" \
+	"${VSCODE_VAR_LIB}" \
+	"${VSCODE_VAR_RUN}"
+touch "${VSCODE_VAR_RUN}/code-server.pid"
+create_log_config "${VSCODE_ETC}/logging.conf"
+check_conda_config
+create_env_config
+
+# Unset any current variables the user may have set for their RedHat shell in favor of the container's Ubuntu shell, then set the appropriate variables for Ubuntu.
+#unset REQUESTS_CA_BUNDLE
+#unset SSL_CERT_FILE
+#unset NODE_EXTRA_CA_CERTS
+
+source $ENV_FILE
+
+########################################
+# apptainer variables
+# https://apptainer.org/docs/user/main/cli/apptainer_exec.html
+
+BIND_POINTS=""\
+"${VSCODE_ETC}/logging.conf:/etc/code-server/logging.conf,"\
+"${VSCODE_VAR_LOG}:/var/log/code-server,"\
+"${VSCODE_VAR_LIB}:/var/lib/code-server,"\
+"${VSCODE_VAR_RUN}:/run/code-server,"\
+"${VSCODE_OPT}:/opt/share,"\
+"${CONDA_ENV}:/opt/share/code-server/conda,"\
+"${TMP_DIR}:/tmp"
+
+echo "`date`: Bind points for container:" >> ${JOB_LOG}
+echo "$BIND_POINTS" | tr ',' '\n' >> ${JOB_LOG}
+
+###########################
+# Launch the Code Server
+
+# Set working directory to home directory
+cd "${HOME}"
+
+# Output debug info
+printf "`date`: Module list\n\t" >> ${JOB_LOG}
+module list 2>> ${JOB_LOG}
+echo "`date`: Executing VSCode on `hostname`." >> ${JOB_LOG}
+echo "`date`: Starting up VSCode..." >> ${JOB_LOG}
+
+# Container startup
 apptainer exec \
-	${CODESERVER_CONTAINER_URI} \
-	/usr/bin/code-server \
-    		--auth="password" \
-    		--bind-addr="0.0.0.0:${port}" \
-    		--disable-telemetry \
-    		--ignore-last-opened \
-    		--user-data-dir="$CODE_SERVER_DATAROOT" \
-    		--log debug \
-    		"<%= working_dir.to_s %>"
+	--nv \
+	-B "${BIND_POINTS}" \
+	"$VSCODE_CONTAINER_URI" \
+	code-server \
+	--auth="password" \
+	--bind-addr="0.0.0.0:${port}" \
+	--disable-telemetry \
+	--user-data-dir="$VSCODE_DIR" \
+	--log debug \
+	#--cert=/etc/ssl/certs/ca-bundle.crt \
+	"<%= working_dir.to_s %>"

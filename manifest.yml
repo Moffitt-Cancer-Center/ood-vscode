@@ -1,9 +1,10 @@
 ---
-name: Code Server
+name: VSCode
 category: Interactive Apps
-subcategory: Servers
+subcategory: Active Production Apps
 role: batch_connect
 description: |
-  This app will launch a VS Code server using Code Server on the red 
-  cluster.
+  This app launches a VSCode container on one node of the Red cluster.
 
+  **Please let the HPC Team know of any issues or improvements that needs to be made
+  to this and the other apps while they are in the testing phase.**
