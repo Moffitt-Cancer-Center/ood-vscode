@@ -1,51 +1,51 @@
-# Open OnDemand RStudio Server App (Apptainer) - Moffitt HPC Customization
+# Open OnDemand VSCode Server App (Apptainer) - Moffitt HPC Customization
 
-This repository contains the necessary files to deploy an RStudio Server application within an Apptainer container on an Open OnDemand (OOD) platform, specifically customized for the Moffitt HPC environment. This setup provides a consistent and reproducible environment for R development, ensuring that users have access to the required R packages and dependencies without needing to manage them directly on the shared OOD system. This implementation includes specific configurations for authentication, logging, and persistent state management tailored to this environment.
+This repository contains the necessary files to deploy a VSCode Server application within an Apptainer container on an Open OnDemand (OOD) platform, specifically customized for the Moffitt HPC environment. This setup provides a consistent and reproducible environment for code development, ensuring that users have access to the required tools and dependencies without needing to manage them directly on the shared OOD system. This implementation includes specific configurations for authentication, logging, and persistent state management tailored to this environment.
 
 **Important:** This README and the associated scripts are highly customized for the Moffitt HPC environment. They may not be directly applicable to other systems without significant modification.
 
 ## Features
 
-*   **Containerized Environment:** RStudio Server runs inside an Apptainer container, isolating it from the host system and ensuring consistent behavior. Uses a specific Docker image from Docker Hub.
-*   **Reproducibility:** The Apptainer container image encapsulates the entire R environment, including R version, installed packages, and system libraries, making it easy to reproduce results.
-*   **Simplified Dependency Management:** Users don't need to install R packages or manage dependencies on the OOD system. All dependencies are pre-installed within the container.
-*   **Easy Deployment:** The provided OOD app simplifies the deployment and management of the RStudio Server application.
+*   **Containerized Environment:** VSCode Server runs inside an Apptainer container, isolating it from the host system and ensuring consistent behavior. Uses a specific Docker image from Docker Hub.
+*   **Reproducibility:** The Apptainer container image encapsulates the entire VSCode environment, including VSCode version, installed extensions, and system libraries, making it easy to reproduce results.
+*   **Simplified Dependency Management:** Users don't need to manage dependencies on the OOD system. All dependencies are pre-installed within the container.
+*   **Easy Deployment:** The provided OOD app simplifies the deployment and management of the VSCode Server application.
 *   **Custom Authentication:** Uses a PAM-based authentication helper script for secure user login.
-*   **Persistent State:** RStudio Server state (e.g., project settings, package installations) is persisted across sessions using bind mounts to the user's home directory.
+*   **Persistent State:** VSCode Server state (e.g., project settings, extensions, configurations) is persisted across sessions using bind mounts to the user's home directory.
 *   **Custom Logging:** Configured for detailed logging to a session-specific directory.
 *   **Temporary Directory Management:** Uses a unique temporary directory for each session.
-*   **R Version Control:** Allows specifying the R version via the OOD form.
+*   **VSCode Version Control:** Allows specifying the VSCode version via the OOD form (Latest or Latest-ML).
 
 ## Prerequisites
 
 *   **Open OnDemand Installation:** You must have a working Open OnDemand installation.
 *   **Apptainer Installation:** Apptainer (Singularity) must be installed and configured on your OOD system.
-*   **Docker Image:** The system relies on a specific Docker image: `dockerhub.moffitt.org/hpc/rocker-rstudio`. Ensure this image is accessible to your Apptainer installation. Contact your HPC administrator if you have questions about image availability.
+*   **Docker Image:** The system relies on a specific Docker image: `dockerhub.moffitt.org/ood/rocker-multi`. Ensure this image is accessible to your Apptainer installation. Contact your HPC administrator if you have questions about image availability.
 *   **PAM Configuration:** The system uses PAM for authentication. Ensure that PAM is configured correctly on the compute nodes.
-*   **Shared Filesystem:** Users' home directories must be accessible from the compute nodes where the RStudio Server instances will run.
+*   **Shared Filesystem:** Users' home directories must be accessible from the compute nodes where the VSCode Server instances will run.
 
 ## Installation
 
 1.  **Clone the Repository:**
 
     ```bash
-    git clone https://github.com/<your-username>/ood-rstudio-apptainer.git
-    cd ood-rstudio-apptainer
+    git clone https://github.com/<your-username>/ood-vscode-apptainer.git
+    cd ood-vscode-apptainer
     ```
 
 2.  **Copy the App to the OOD Apps Directory:**
 
-    Copy the `rstudio-apptainer` directory to the appropriate OOD apps directory. Consult your OOD administrator for the correct location. This is typically located at `/var/www/ood/apps/sys/` for system apps or `~/ood/apps/dev/` for development apps.
+    Copy the `vscode` directory to the appropriate OOD apps directory. Consult your OOD administrator for the correct location. This is typically located at `/var/www/ood/apps/sys/` for system apps or `~/ood/apps/dev/` for development apps.
 
     ```bash
-    sudo cp -r rstudio-apptainer /var/www/ood/apps/sys/
+    sudo cp -r vscode /var/www/ood/apps/sys/
     # OR
-    cp -r rstudio-apptainer ~/ood/apps/dev/
+    cp -r vscode ~/ood/apps/dev/
     ```
 
 3.  **Configure the App:**
 
-    Edit the `manifest.yml`, `form.yml`, `submit.yml.erb`, and `view.html.erb` files in the `rstudio-apptainer` directory. Pay close attention to the following settings:
+    Edit the `manifest.yml`, `form.yml`, `submit.yml.erb`, and `view.html.erb` files in the `vscode` directory. Pay close attention to the following settings:
 
     *   `title`: The name of the app as it will appear in the OOD dashboard.
     *   `description`: A brief description of the app.

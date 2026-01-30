@@ -10,6 +10,9 @@ if ! working_dir.exist?
 elsif working_dir.file?
 	working_dir = working_dir.parent
 end
+
+# Make sure the working directory exists
+mkdir -p "${working_dir}"
 %>
 
 ##################################################################
@@ -23,15 +26,21 @@ create_log_config() {
 	fi
 }
 check_conda_config() {
+	if [ -z "<%= context.auto_conda %>" ]; then
+		# No conda environment selected
+		export CONDA_ENV=""
+		return 0
+	fi
+	
 	dirs=("$HOME/.conda/envs" "$HOME/miniconda3/envs" "$HOME/anaconda3/envs")
 	for dir in "${dirs[@]}"; do
-		if [ -d "$dir/<%= context.conda_env %>" ]; then
-			export CONDA_ENV="$dir/<%= context.conda_env %>"
+		if [ -d "$dir/<%= context.auto_conda %>" ]; then
+			export CONDA_ENV="$dir/<%= context.auto_conda %>"
 			echo "Found $CONDA_ENV"
 			return 0
 		fi
 	done
-	echo "'<%= context.conda_env %>' not found in specified directories."
+	echo "'<%= context.auto_conda %>' not found in specified directories."
 	return 1
 }
 
@@ -69,7 +78,13 @@ VSCODE_VAR_LOG=${LOG_DIR}
 export APPTAINERENV_VSCODE_PASSWORD="$password"
 export VSCODE_PASSWORD="$password"
 export PASSWORD="$password"
-export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
+
+# Set the container URI based on the selected version
+if [ "$V_VERSION" = "ml" ]; then
+  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:ml"
+else
+  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
+fi
 
 # Initialize environment for execution.
 mkdir -p ${LOG_DIR}
@@ -124,6 +139,15 @@ create_env_config
 
 source $ENV_FILE
 
+# Validate conda environment if specified
+if [ -n "$CONDA_ENV" ]; then
+  if [ ! -d "$CONDA_ENV" ]; then
+    echo "`date`: ERROR: Conda environment '$CONDA_ENV' not found!" >> ${JOB_LOG}
+    exit 1
+  fi
+  echo "`date`: Using conda environment: $CONDA_ENV" >> ${JOB_LOG}
+fi
+
 ########################################
 # apptainer variables
 # https://apptainer.org/docs/user/main/cli/apptainer_exec.html
@@ -134,8 +158,12 @@ BIND_POINTS=""\
 "${VSCODE_VAR_LIB}:/var/lib/code-server,"\
 "${VSCODE_VAR_RUN}:/run/code-server,"\
 "${VSCODE_OPT}:/opt/share,"\
-"${CONDA_ENV}:/opt/share/code-server/conda,"\
 "${TMP_DIR}:/tmp"
+
+# Add conda environment binding if selected
+if [ -n "$CONDA_ENV" ]; then
+  BIND_POINTS="${BIND_POINTS},${CONDA_ENV}:/opt/share/code-server/conda"
+fi
 
 echo "`date`: Bind points for container:" >> ${JOB_LOG}
 echo "$BIND_POINTS" | tr ',' '\n' >> ${JOB_LOG}
@@ -164,4 +192,7 @@ apptainer exec \
 	--user-data-dir="$VSCODE_DIR" \
 	--log debug \
 	#--cert=/etc/ssl/certs/ca-bundle.crt \
-	"<%= working_dir.to_s %>"
+	"<%= working_dir.to_s %>" || {
+		echo "`date`: Failed to start VSCode container" >> ${JOB_LOG}
+		exit 1
+	}

@@ -60,6 +60,7 @@ attributes:
   auto_conda:
     placeholder: "Optional: Choose a local Conda env"
     label: "Conda Env (optional)"
+    help: "Select a conda environment to use in the VSCode container (optional). If selected, the environment will be available inside the container for development."
   
   # App-specific attributes below
   v_version:

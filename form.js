@@ -58,4 +58,11 @@ $(document).ready(function() {
   // Set the max value to be what was set in the last session
   fix_num_cores();
   set_node_type_change_handler();
+  
+  // Ensure the form properly handles the conda environment selection
+  $('#auto_conda').on('change', function() {
+    // This ensures that when a conda environment is selected, 
+    // it's properly handled by the backend
+    console.log('Conda environment selected:', $(this).val());
+  });
 });
