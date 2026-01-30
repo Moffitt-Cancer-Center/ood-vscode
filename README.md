@@ -6,27 +6,27 @@ This repository contains the necessary files to deploy a VSCode Server applicati
 
 ## Features
 
-*   **Containerized Environment:** VSCode Server runs inside an Apptainer container, isolating it from the host system and ensuring consistent behavior. Uses a specific Docker image from Docker Hub.
-*   **Reproducibility:** The Apptainer container image encapsulates the entire VSCode environment, including VSCode version, installed extensions, and system libraries, making it easy to reproduce results.
-*   **Simplified Dependency Management:** Users don't need to manage dependencies on the OOD system. All dependencies are pre-installed within the container.
-*   **Easy Deployment:** The provided OOD app simplifies the deployment and management of the VSCode Server application.
-*   **Custom Authentication:** Uses a PAM-based authentication helper script for secure user login.
-*   **Persistent State:** VSCode Server state (e.g., project settings, extensions, configurations) is persisted across sessions using bind mounts to the user's home directory.
-*   **Custom Logging:** Configured for detailed logging to a session-specific directory.
-*   **Temporary Directory Management:** Uses a unique temporary directory for each session.
-*   **VSCode Version Control:** Allows specifying the VSCode version via the OOD form (Latest or Latest-ML).
+* **Containerized Environment:** VSCode Server runs inside an Apptainer container, isolating it from the host system and ensuring consistent behavior. Uses a specific Docker image from Docker Hub.
+* **Reproducibility:** The Apptainer container image encapsulates the entire VSCode environment, including VSCode version, installed extensions, and system libraries, making it easy to reproduce results.
+* **Simplified Dependency Management:** Users don't need to manage dependencies on the OOD system. All dependencies are pre-installed within the container.
+* **Easy Deployment:** The provided OOD app simplifies the deployment and management of the VSCode Server application.
+* **Custom Authentication:** Uses a PAM-based authentication helper script for secure user login.
+* **Persistent State:** VSCode Server state (e.g., project settings, extensions, configurations) is persisted across sessions using bind mounts to the user's home directory.
+* **Custom Logging:** Configured for detailed logging to a session-specific directory.
+* **Temporary Directory Management:** Uses a unique temporary directory for each session.
+* **VSCode Version Control:** Allows specifying the VSCode version via the OOD form (Latest or Latest-ML).
 
 ## Prerequisites
 
-*   **Open OnDemand Installation:** You must have a working Open OnDemand installation.
-*   **Apptainer Installation:** Apptainer (Singularity) must be installed and configured on your OOD system.
-*   **Docker Image:** The system relies on a specific Docker image: `dockerhub.moffitt.org/ood/rocker-multi`. Ensure this image is accessible to your Apptainer installation. Contact your HPC administrator if you have questions about image availability.
-*   **PAM Configuration:** The system uses PAM for authentication. Ensure that PAM is configured correctly on the compute nodes.
-*   **Shared Filesystem:** Users' home directories must be accessible from the compute nodes where the VSCode Server instances will run.
+* **Open OnDemand Installation:** You must have a working Open OnDemand installation.
+* **Apptainer Installation:** Apptainer (Singularity) must be installed and configured on your OOD system.
+* **Docker Image:** The system relies on a specific Docker image: `dockerhub.moffitt.org/ood/rocker-multi`. Ensure this image is accessible to your Apptainer installation. Contact your HPC administrator if you have questions about image availability.
+* **PAM Configuration:** The system uses PAM for authentication. Ensure that PAM is configured correctly on the compute nodes.
+* **Shared Filesystem:** Users' home directories must be accessible from the compute nodes where the VSCode Server instances will run.
 
 ## Installation
 
-1.  **Clone the Repository:**
+1 **Clone the Repository:**
 
     ```bash
     git clone https://github.com/<your-username>/ood-vscode-apptainer.git
@@ -102,7 +102,7 @@ This repository contains the necessary files to deploy a VSCode Server applicati
 
 If you need to customize the R environment, you can build your own Apptainer image based on the `dockerhub.moffitt.org/hpc/rocker-rstudio` image. Here's an example `Singularity` file:
 
-```singularity
+    singularity
 Bootstrap: docker
 From: dockerhub.moffitt.org/hpc/rocker-rstudio:latest
 
