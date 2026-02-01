@@ -63,17 +63,20 @@ function toggle_advanced_options() {
   let auto_conda_group = $('#batch_connect_session_context_auto_conda').closest('.form-group');
   let v_version_group = $('#batch_connect_session_context_v_version').closest('.form-group');
   let working_dir_group = $('#batch_connect_session_context_working_dir').closest('.form-group');
+  let reservation_group = $('#batch_connect_session_context_reservation  ').closest('.form-group');
   
   if (show_advanced) {
     auto_qos_group.show();
     auto_conda_group.show();
     v_version_group.show();
     working_dir_group.show();
+    reservation_group.show();
   } else {
     auto_qos_group.hide();
     auto_conda_group.hide();
     v_version_group.hide();
     working_dir_group.hide();
+    reservation_group.hide();
   }
 }
 
