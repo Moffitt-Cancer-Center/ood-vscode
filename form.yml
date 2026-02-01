@@ -64,14 +64,13 @@ attributes:
   
   auto_qos:
     value: "normal"
-    help: Default is usually fine.
+    help: "Default is usually fine."
 
   reservation:
-  widget: "text_field"
-  label: "Enter Reservation Name"
-  value: ""
-  help: |
-    If you have a reservation, enter the reservation name here to use it for this job.
+    widget: "text_field"
+    label: "Enter Reservation Name"
+    value: ""
+    help: "If you have a reservation, enter the reservation name here to use it for this job."
 
   # App-specific parameters below
   v_version:
