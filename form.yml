@@ -8,8 +8,8 @@ cluster: "slurm"
 
 form:
   - bc_num_gpu
-  - auto_mem
   - auto_cores
+  - auto_mem
   - bc_num_hours
   - bc_num_slots
   - bc_queue
