@@ -11,15 +11,14 @@ script:
     - "--nodes=<%= bc_num_slots.blank? ? 1 : bc_num_slots.to_i %>"
     - "--cpus-per-task=<%= auto_cores.blank? ? 1 : auto_cores.to_i %>"
     - "--ntasks=1"
-    - "--mem=<%= auto_mem.blank? ? 4 : auto_mem.to_i %>"
+    - "--mem=<%= auto_mem.blank? ? 2 : auto_mem.to_i %>"
     - "--gres=gpu:<%= bc_num_gpu.blank? ? "0" : bc_num_gpu.to_i %>"
     - "--job-name=ood-vscode-cont_<%= ENV['USER'] %>_<%= date %>::app=OOD-vscode-cont,"
-    - "--qos=<%= auto_qos %>"
+    - "--qos=<%= auto_qos.blank? ? 'normal' : auto_qos %>"
+    - "--partition=<%= bc_queue.blank? ? 'red' : bc_queue %>"
 
 # VSCode-specific configuration
 vscode:
-  version: "<%= v_version %>"
+  version: "<%= v_version.blank? ? 'latest' : v_version %>"
   working_dir: "<%= working_dir %>"
   conda_env: "<%= auto_conda %>"
-  # Pass the conda environment to the script context
-  conda_env_name: "<%= auto_conda %>"

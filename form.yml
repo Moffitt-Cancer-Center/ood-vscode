@@ -7,13 +7,15 @@ tile:
 cluster: "slurm"
 
 form:
-  - auto_qos
   - auto_mem
   - auto_cores
   - bc_num_gpu
   - bc_num_hours
   - bc_num_slots
   - bc_queue
+  # Advanced options toggle
+  - show_advanced
+  - auto_qos
   # App-specific parameters below
   - auto_conda
   - v_version
@@ -53,6 +55,12 @@ attributes:
     help: |
       - **none** or **A30:x (e.g. A30:1)**  
   
+  show_advanced:
+    widget: "check_box"
+    label: "Show Advanced Options"
+    help: "Check to show advanced options (QoS and Conda environment)"
+    value: 0
+
   auto_qos:
     value: "normal"
     help: Default is usually fine.

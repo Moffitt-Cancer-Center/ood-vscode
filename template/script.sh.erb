@@ -81,9 +81,9 @@ export PASSWORD="$password"
 
 # Set the container URI based on the selected version
 if [ "$V_VERSION" = "ml" ]; then
-export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
+  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:ml"
 else
-export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/hpc/code-server:latest"
+  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
 fi
 
 # Initialize environment for execution.

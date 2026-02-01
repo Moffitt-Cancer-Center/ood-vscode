@@ -54,15 +54,48 @@ function set_node_type_change_handler() {
   node_type_input.change(node_type_input, fix_num_cores);
 }
 
+/**
+ * Toggle visibility of advanced options based on checkbox state
+ */
+function toggle_advanced_options() {
+  let show_advanced = $('#batch_connect_session_context_show_advanced').is(':checked');
+  let auto_qos_group = $('#batch_connect_session_context_auto_qos').closest('.form-group');
+  let auto_conda_group = $('#batch_connect_session_context_auto_conda').closest('.form-group');
+  
+  if (show_advanced) {
+    auto_qos_group.show();
+    auto_conda_group.show();
+  } else {
+    auto_qos_group.hide();
+    auto_conda_group.hide();
+  }
+}
+
 $(document).ready(function() {
+  // Note: This form doesn't use node_type, but the code is retained for compatibility
+  // The actual fields used are: auto_cores, auto_mem, bc_num_gpu, bc_num_hours, bc_num_slots, bc_queue, auto_qos
+  
   // Set the max value to be what was set in the last session
   fix_num_cores();
   set_node_type_change_handler();
   
+  // Initialize advanced options visibility
+  toggle_advanced_options();
+  
+  // Handle show_advanced checkbox changes
+  $('#batch_connect_session_context_show_advanced').on('change', function() {
+    toggle_advanced_options();
+  });
+  
   // Ensure the form properly handles the conda environment selection
-  $('#auto_conda').on('change', function() {
+  $('#batch_connect_session_context_auto_conda').on('change', function() {
     // This ensures that when a conda environment is selected, 
     // it's properly handled by the backend
     console.log('Conda environment selected:', $(this).val());
+  });
+  
+  // Handle VSCode version selection
+  $('#batch_connect_session_context_v_version').on('change', function() {
+    console.log('VSCode version selected:', $(this).val());
   });
 });
