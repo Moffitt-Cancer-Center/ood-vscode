@@ -4,4 +4,4 @@ category: Interactive Apps
 subcategory: Active Production Apps
 role: batch_connect
 description: |
-  This app launches a VSCode container on one node of the Red cluster.
+  Launch a VSCode container on a Red compute node.
