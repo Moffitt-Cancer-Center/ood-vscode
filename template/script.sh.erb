@@ -47,9 +47,9 @@ check_conda_config() {
 ###################################################################
 ROOT_DIR="<%= session.staged_root %>"
 V_VERSION="<%= context.v_version %>"
-LOG_DIR="${ROOT_DIR}/log"  #  local logging output
-BIN_DIR="${ROOT_DIR}/bin"    # local bin (for session-specific tasks)
-TMP_DIR=$(mktemp -d)    # session-specific /tmp
+LOG_DIR="${ROOT_DIR}/log"
+BIN_DIR="${ROOT_DIR}/bin"
+TMP_DIR=$(mktemp -d)
 JOB_LOG="${LOG_DIR}/job_startup.log"
 VSCODE_DIR=${HOME}/.local/share/code_server
 VSCODE_EXT=${VSCODE_DIR}/extensions
@@ -58,21 +58,6 @@ VSCODE_VAR_RUN=${ROOT_DIR}/var/run
 VSCODE_OPT=${VSCODE_DIR}/opt
 VSCODE_ETC=${VSCODE_DIR}/etc
 VSCODE_VAR_LOG=${LOG_DIR}
-#CPP_FILE="${VSCODE_DIR}/c_cpp_properties.json"
-#
-#if [[ -f "$CPP_FILE" ]]; then
-#	CPP_DIR="${TMPDIR:=/tmp/$USER}/cpp-vscode"
-#	mkdir -p "$CPP_DIR"
-#	chmod 700 "$CPP_DIR"
-#	# if the file is empty, let's initialize it
-#	[ -s "$CPP_FILE" ] || echo '{"configurations": [{ "name": "Linux", "browse": { "databaseFilename": null }}], "version": 4}' > "$CPP_FILE"
-#
-#	jq --arg dbfile "$CPP_DIR/cpp-vscode.db" \
-#		'.configurations[0].browse.databaseFilename = $dbfile' \
-#		"$CPP_FILE" > "$CPP_FILE".new
-#
-#	mv "$CPP_FILE".new "$CPP_FILE"
-#fi
 
 # "APPTAINERENV" must preceed anything exported to apptainer environment.
 export APPTAINERENV_VSCODE_PASSWORD="$password"

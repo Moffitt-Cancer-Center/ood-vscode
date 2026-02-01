@@ -1,102 +1,150 @@
-# Open OnDemand VSCode Server App (Apptainer) - Moffitt HPC Customization
+# Open OnDemand VSCode Server App (Apptainer) - Moffitt HPC
 
-This repository contains the necessary files to deploy a VSCode Server application within an Apptainer container on an Open OnDemand (OOD) platform, specifically customized for the Moffitt HPC environment. This setup provides a consistent and reproducible environment for code development, ensuring that users have access to the required tools and dependencies without needing to manage them directly on the shared OOD system. This implementation includes specific configurations for authentication, logging, and persistent state management tailored to this environment.
+This repository contains the necessary files to deploy a VSCode Server application within an Apptainer container on an Open OnDemand (OOD) platform, specifically customized for the Moffitt HPC environment. This setup provides a consistent and reproducible environment for code development.
 
-**Important:** This README and the associated scripts are highly customized for the Moffitt HPC environment. They may not be directly applicable to other systems without significant modification.
+**Important:** This app is highly customized for the Moffitt HPC environment and may require modifications for other systems.
 
 ## Features
 
-* **Containerized Environment:** VSCode Server runs inside an Apptainer container, isolating it from the host system and ensuring consistent behavior. Uses a specific Docker image from Docker Hub.
-* **Reproducibility:** The Apptainer container image encapsulates the entire VSCode environment, including VSCode version, installed extensions, and system libraries, making it easy to reproduce results.
-* **Simplified Dependency Management:** Users don't need to manage dependencies on the OOD system. All dependencies are pre-installed within the container.
-* **Easy Deployment:** The provided OOD app simplifies the deployment and management of the VSCode Server application.
-* **Custom Authentication:** Uses a PAM-based authentication helper script for secure user login.
-* **Persistent State:** VSCode Server state (e.g., project settings, extensions, configurations) is persisted across sessions using bind mounts to the user's home directory.
-* **Custom Logging:** Configured for detailed logging to a session-specific directory.
-* **Temporary Directory Management:** Uses a unique temporary directory for each session.
-* **VSCode Version Control:** Allows specifying the VSCode version via the OOD form (Latest or Latest-ML).
+* **Containerized Environment:** VSCode Server runs inside an Apptainer container using Docker images from `dockerhub.moffitt.org/ood/rocker-multi`
+* **Version Selection:** Choose between Latest or Latest-ML (machine learning optimized) VSCode containers
+* **GPU Support:** Optional NVIDIA A30 GPU allocation via checkbox selection
+* **Conda Environment Integration:** Optional conda environment binding for custom Python/R environments
+* **Working Directory Selection:** Choose your starting project directory or default to $HOME
+* **Persistent State:** VSCode settings, extensions, and configurations persist across sessions
+* **Custom Logging:** Session-specific logging to dedicated directories
+* **Advanced Options:** QoS tier selection, reservation support, and conda environment selection available via toggle
+* **Secure Authentication:** Password-based authentication with encrypted cookies
 
 ## Prerequisites
 
-* **Open OnDemand Installation:** You must have a working Open OnDemand installation.
-* **Apptainer Installation:** Apptainer (Singularity) must be installed and configured on your OOD system.
-* **Docker Image:** The system relies on a specific Docker image: `dockerhub.moffitt.org/ood/rocker-multi`. Ensure this image is accessible to your Apptainer installation. Contact your HPC administrator if you have questions about image availability.
-* **PAM Configuration:** The system uses PAM for authentication. Ensure that PAM is configured correctly on the compute nodes.
-* **Shared Filesystem:** Users' home directories must be accessible from the compute nodes where the VSCode Server instances will run.
+* Open OnDemand installation (version 2.0+)
+* Apptainer/Singularity installed on compute nodes
+* Access to `dockerhub.moffitt.org/ood/rocker-multi` container images
+* Slurm job scheduler
+* Shared filesystem accessible from compute nodes
+
+## Form Fields
+
+### Basic Options
+
+* **Request GPU:** Checkbox to request 1 NVIDIA A30 GPU
+* **Cores:** Number of CPU cores (default: 1)
+* **Memory (GB):** Memory allocation in GB (default: 2)
+* **Runtime (hours):** Job walltime in hours (1-336, default: 1)
+* **VSCode Version:** Select Latest or Latest-ML container
+* **Working Directory:** Path selector for starting directory (default: $HOME)
+
+### Advanced Options (Hidden by default)
+
+* **Show Advanced Options:** Checkbox to reveal advanced settings
+* **QoS:** Quality of Service tier (default: normal)
+* **Conda Environment:** Optional conda environment name to bind into container
+* **Reservation:** Optional Slurm reservation name
 
 ## Installation
 
-1 **Clone the Repository:**
+1. **Copy the app directory:**
 
     ```bash
-    git clone https://github.com/<your-username>/ood-vscode-apptainer.git
-    cd ood-vscode-apptainer
-    ```
-
-2.  **Copy the App to the OOD Apps Directory:**
-
-    Copy the `vscode` directory to the appropriate OOD apps directory. Consult your OOD administrator for the correct location. This is typically located at `/var/www/ood/apps/sys/` for system apps or `~/ood/apps/dev/` for development apps.
-
-    ```bash
+    # For system-wide deployment
     sudo cp -r vscode /var/www/ood/apps/sys/
-    # OR
-    cp -r vscode ~/ood/apps/dev/
+    
+    # For development
+    cp -r vscode ~/ondemand/dev/
     ```
 
-3.  **Configure the App:**
+2. **Verify container image access:**
 
-    Edit the `manifest.yml`, `form.yml`, `submit.yml.erb`, and `view.html.erb` files in the `vscode` directory. Pay close attention to the following settings:
-
-    *   `title`: The name of the app as it will appear in the OOD dashboard.
-    *   `description`: A brief description of the app.
-    *   `icon`: Path to an icon for the app.
-    *   `form`: Defines the form fields that users will see when launching the app (e.g., CPU cores, memory, wall time, R version). **Ensure that the `r_version` field in the form matches the available tags in the `dockerhub.moffitt.org/hpc/rocker-rstudio` Docker image.**
-
-    Edit the `template/script.sh.erb` file. This script is executed on the compute node to start the RStudio Server instance. This script is heavily customized for the Moffitt HPC environment. **Carefully review and understand the script before deploying.**
-
-    **Key Configuration Details in `template/script.sh.erb`:**
-
-    *   **Docker Image:** The script uses the `dockerhub.moffitt.org/hpc/rocker-rstudio:$R_VERSION` Docker image.
-    *   **Authentication:** The script uses a PAM-based authentication helper script (`bin/auth`) located at `${BIN_DIR}/auth`. It's invoked using the `--auth-pam-helper-path` option of `rserver`. Authentication is enabled with `--auth-none 0` and password encryption is disabled with `--auth-encrypt-password 0`.
-    *   **Bind Mounts:** The script defines bind mounts to redirect system directories within the container to user-level locations, ensuring persistent state and proper logging. These are passed to `apptainer exec` using the `-B` option.  The key bind mounts are:
-        *   `${RSTUDIO_ETC}/database.conf:/etc/rstudio/database.conf`
-        *   `${RSTUDIO_ETC}/logging.conf:/etc/rstudio/logging.conf`
-        *   `${RSTUDIO_VAR_LOG}:/var/log/rstudio`
-        *   `${RSTUDIO_VAR_LIB}:/var/lib/rstudio-server`
-        *   `${RSTUDIO_VAR_RUN}:/run/rstudio-server`
-        *   `${TMP_DIR}:/tmp`
-    *   **Temporary Directory:** A unique temporary directory (`${TMP_DIR}`) is created for each session and used for RStudio Server's data directory and secure cookie key file using the `--server-data-dir` and `--secure-cookie-key-file` options of `rserver`.
-    *   **Rsession Wrapper:** The script creates a wrapper script (`${BIN_DIR}/rsession.sh`) to set up the environment for R sessions launched from within RStudio Server. This wrapper sets environment variables like `TZ`, `HOME`, `R_LIBS_SITE`, and `OMP_NUM_THREADS`.
-    *   **Apptainer Execution:** The script uses `apptainer exec` to run the RStudio Server within the container.
-    *   **Configuration Files:** The script creates and configures `logging.conf` and `database.conf` in `${RSTUDIO_ETC}`.
-
-4.  **Configure R Version Selection (OOD Form):**
-
-    The `script.sh.erb` file uses the `R_VERSION` variable to select the appropriate Docker image tag. You need to configure the OOD form to allow users to select the R version. Edit the `manifest.yml` file and add a form field for `r_version`. For example:
-
-    ```yaml
-    form:
-      - r_version:
-          widget: select
-          label: R Version
-          help: Select the R version to use.
-          options:
-            - "4.2.3"
-            - "4.3.2"
-            - "latest"
+    ```bash
+    apptainer pull docker://dockerhub.moffitt.org/ood/rocker-multi:latest
+    apptainer pull docker://dockerhub.moffitt.org/ood/rocker-multi:ml
     ```
 
-    **Important:** The options in the `options` list must match the available tags in the `dockerhub.moffitt.org/hpc/rocker-rstudio` Docker image.
+3. **Restart the web server (if system-wide):**
 
-5.  **Create a "Connect" App (Optional, but Recommended):**
+    ```bash
+    sudo /opt/ood/nginx_stage/sbin/nginx_stage nginx_clean
+    ```
 
-    To make it easier for users to connect to the RStudio Server instance, create a separate OOD app that provides a link to the running RStudio Server. This app would:
+## Container Images
 
-    *   Read the `port` from the job's standard output (passed via the `--www-port` option).
-    *   Construct the URL to the RStudio Server instance (e.g., `http://<node_name>:<port>`).
-    *   Display the URL to the user.
+The app uses two container variants:
 
-    This "connect" app is beyond the scope of this README, but there are examples available in the Open OnDemand documentation and community forums.
+* **Latest** (`docker://dockerhub.moffitt.org/ood/rocker-multi:latest`): Standard VSCode Server with common development tools
+* **Latest-ML** (`docker://dockerhub.moffitt.org/ood/rocker-multi:ml`): VSCode Server with machine learning libraries and GPU support
+
+## Conda Environment Support
+
+When a conda environment is specified, the app searches in:
+1. `$HOME/.conda/envs/`
+2. `$HOME/miniconda3/envs/`
+3. `$HOME/anaconda3/envs/`
+
+The environment is bound to `/opt/share/code-server/conda` inside the container.
+
+## Slurm Job Configuration
+
+Default job parameters:
+* Partition: `red`
+* QoS: `normal`
+* Nodes: 1
+* Tasks: 1
+* Memory: 2GB
+* Cores: 1
+* GPU: 0
+
+These can be customized via the form.
+
+## File Structure
+
+```
+vscode/
+├── form.yml              # OOD form definition
+├── form.js               # Form behavior and validation
+├── submit.yml.erb        # Slurm job submission template
+├── manifest.yml          # App metadata
+├── view.html.erb         # Connection view template
+├── README.md             # This file
+└── template/
+    ├── script.sh.erb     # Main job script
+    ├── before.sh.erb     # Pre-execution setup (optional)
+    └── after.sh.erb      # Post-execution cleanup (optional)
+```
+
+## Troubleshooting
+
+### VSCode won't start
+* Check job log: `~/ondemand/data/sys/vscode/output/<job_id>/job_startup.log`
+* Verify container image is accessible
+* Check available resources on the partition
+
+### Conda environment not found
+* Verify the environment exists in one of the searched locations
+* Check environment name spelling in the form
+* Review job log for specific error messages
+
+### GPU not available
+* Verify GPU resources are available on the partition
+* Check that the GPU checkbox was selected
+* Confirm GPU allocation in job output
+
+## Security
+
+* Password-based authentication using OOD-generated passwords
+* Secure cookie-based session management
+* All data confined to user's home directory and temporary session directories
+* Container runs as the user (not root)
+
+## Support
+
+For issues specific to the Moffitt HPC environment, contact your HPC support team.
+
+For Open OnDemand general issues, see: https://osc.github.io/ood-documentation/
+
+## License
+
+See LICENSE file for details.
 
 ## Building the Apptainer Image (If Customization is Needed)
 
