@@ -39,13 +39,3 @@ $(document).ready(function() {
     console.log('VSCode version selected:', $(this).val());
   });
 });
-    // This ensures that when a conda environment is selected, 
-    // it's properly handled by the backend
-    console.log('Conda environment selected:', $(this).val());
-  });
-  
-  // Handle VSCode version selection
-  $('#batch_connect_session_context_v_version').on('change', function() {
-    console.log('VSCode version selected:', $(this).val());
-  });
-});
