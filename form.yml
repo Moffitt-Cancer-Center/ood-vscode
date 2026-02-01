@@ -74,6 +74,7 @@ attributes:
   v_version:
     display: true
     widget: "select"
+    value: "ml"
     label: "VSCode version"
     options:
       - ["Latest", "latest"]
