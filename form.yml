@@ -22,7 +22,6 @@ form:
   - working_dir
   - reservation
 
-
 attributes:
   auto_cores:
     value: 1
