@@ -9,55 +9,80 @@
  *     2. The "Select Path" button in a SIBLING container outside that
  *        .form-group, injected by OOD's own JavaScript at page load.
  *
- *   Two consequences:
- *     a) Hiding only the .form-group leaves the button visible.
- *     b) OOD's JS may run AFTER ours, so hiding on document.ready hides
- *        an element that doesn't exist yet — the button is inserted later
- *        and stays visible.
+ *   Problem: OOD's path_selector JS runs in its own document.ready and
+ *   injects the button AFTER ours runs, so the button doesn't exist yet
+ *   when we call hide() on page load.
  *
- *   Fix: use nextUntil('.form-group') to capture all sibling elements
- *   between the working_dir form-group and the next form-group (which
- *   includes the button container regardless of OOD version). Also run a
- *   deferred toggle after a short delay so the button exists in the DOM.
+ *   Fix: use a MutationObserver that watches for the button being added to
+ *   the DOM, hides it immediately if advanced options are collapsed, and
+ *   then disconnects. This is a one-time observer and never interferes with
+ *   user-triggered toggles.
+ *
+ *   Do NOT use setTimeout for this — a timer that re-runs toggle_advanced_options
+ *   after page load will race against user interaction and can override a
+ *   hide the user just triggered, making re-hiding appear broken.
  */
+
 function toggle_advanced_options() {
   let show_advanced = $('#batch_connect_session_context_show_advanced').is(':checked');
 
-  // Standard fields — hide/show via their .form-group ancestor
-  let standard_groups = $()
-    .add($('#batch_connect_session_context_auto_qos').closest('.form-group'))
-    .add($('#batch_connect_session_context_auto_conda').closest('.form-group'))
-    .add($('#batch_connect_session_context_v_version').closest('.form-group'))
-    .add($('#batch_connect_session_context_reservation').closest('.form-group'))
-    .add($('#batch_connect_session_context_custom_packages').closest('.form-group'))
-    .add($('#batch_connect_session_context_extra_packages').closest('.form-group'))
-    .add($('#batch_connect_session_context_bypass_custom_build').closest('.form-group'));
+  // Each call rebuilds the selector set from current DOM state.
+  let auto_qos_group             = $('#batch_connect_session_context_auto_qos').closest('.form-group');
+  let auto_conda_group           = $('#batch_connect_session_context_auto_conda').closest('.form-group');
+  let v_version_group            = $('#batch_connect_session_context_v_version').closest('.form-group');
+  let reservation_group          = $('#batch_connect_session_context_reservation').closest('.form-group');
+  let custom_packages_group      = $('#batch_connect_session_context_custom_packages').closest('.form-group');
+  let extra_packages_group       = $('#batch_connect_session_context_extra_packages').closest('.form-group');
+  let bypass_custom_build_group  = $('#batch_connect_session_context_bypass_custom_build').closest('.form-group');
 
-  // working_dir: hide the form-group AND every sibling element that follows
-  // it before the next .form-group — this captures the path_selector button
-  // container regardless of how OOD versions name or structure it.
-  let wdir_group = $('#batch_connect_session_context_working_dir').closest('.form-group');
-  let wdir_all   = wdir_group.add(wdir_group.nextUntil('.form-group'));
+  // working_dir: form-group (text input) + any siblings before the next
+  // .form-group — the path_selector button container lives in that gap.
+  let wdir_group    = $('#batch_connect_session_context_working_dir').closest('.form-group');
+  let wdir_siblings = wdir_group.nextUntil('.form-group');
 
   if (show_advanced) {
-    standard_groups.show();
-    wdir_all.show();
+    auto_qos_group.show();
+    auto_conda_group.show();
+    v_version_group.show();
+    wdir_group.show();
+    wdir_siblings.show();
+    reservation_group.show();
+    custom_packages_group.show();
+    extra_packages_group.show();
+    bypass_custom_build_group.show();
   } else {
-    standard_groups.hide();
-    wdir_all.hide();
+    auto_qos_group.hide();
+    auto_conda_group.hide();
+    v_version_group.hide();
+    wdir_group.hide();
+    wdir_siblings.hide();
+    reservation_group.hide();
+    custom_packages_group.hide();
+    extra_packages_group.hide();
+    bypass_custom_build_group.hide();
   }
 }
 
 $(document).ready(function() {
-  // Initial toggle: hides standard form-groups immediately on page load.
+  // Hide/show on page load based on current checkbox state.
   toggle_advanced_options();
 
-  // Deferred toggle: OOD's path_selector JS injects the "Select Path" button
-  // into the DOM in its own document.ready handler which may fire after ours.
-  // Re-running after a short delay ensures the button exists and gets hidden.
-  setTimeout(toggle_advanced_options, 250);
+  // MutationObserver: fires once when OOD's path_selector JS injects the
+  // "Select Path" button container into the DOM (a sibling of wdir_group).
+  // Immediately applies the correct visibility and then disconnects so it
+  // never interferes with subsequent user interactions.
+  var observer = new MutationObserver(function(mutations, obs) {
+    var wdir_group    = $('#batch_connect_session_context_working_dir').closest('.form-group');
+    var wdir_siblings = wdir_group.nextUntil('.form-group');
+    if (wdir_siblings.length > 0) {
+      obs.disconnect();
+      var show = $('#batch_connect_session_context_show_advanced').is(':checked');
+      wdir_siblings[show ? 'show' : 'hide']();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 
-  // Re-evaluate whenever the checkbox changes.
+  // Re-evaluate on every checkbox change.
   $('#batch_connect_session_context_show_advanced').on('change', toggle_advanced_options);
 
   $('#batch_connect_session_context_auto_conda').on('change', function() {
