@@ -10,6 +10,9 @@ function toggle_advanced_options() {
   let v_version_group = $('#batch_connect_session_context_v_version').closest('.form-group');
   let working_dir_group = $('#batch_connect_session_context_working_dir').closest('.form-group');
   let reservation_group = $('#batch_connect_session_context_reservation').closest('.form-group');
+  let custom_packages_group = $('#batch_connect_session_context_custom_packages').closest('.form-group');
+  let extra_packages_group = $('#batch_connect_session_context_extra_packages').closest('.form-group');
+  let bypass_custom_build_group = $('#batch_connect_session_context_bypass_custom_build').closest('.form-group');
   
   if (show_advanced) {
     auto_qos_group.show();
@@ -17,12 +20,18 @@ function toggle_advanced_options() {
     v_version_group.show();
     working_dir_group.show();
     reservation_group.show();
+    custom_packages_group.show();
+    extra_packages_group.show();
+    bypass_custom_build_group.show();
   } else {
     auto_qos_group.hide();
     auto_conda_group.hide();
     v_version_group.hide();
     working_dir_group.hide();
     reservation_group.hide();
+    custom_packages_group.hide();
+    extra_packages_group.hide();
+    bypass_custom_build_group.hide();
   }
 }
 
