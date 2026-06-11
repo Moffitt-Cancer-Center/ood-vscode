@@ -132,12 +132,14 @@ export APPTAINERENV_VSCODE_PASSWORD="$password"
 export VSCODE_PASSWORD="$password"
 export PASSWORD="$password"
 
-# Set the container URI based on the selected version
-if [ "$V_VERSION" = "ml" ]; then
-  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:ml"
-else
-  export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
-fi
+case "$V_VERSION" in
+    "moffitt-ml")
+        export VSCODE_CONTAINER_URI="docker://dockerhub.moffitt.org/ood/rocker-multi:latest"
+        ;;
+    "rocker-ml")
+        export VSCODE_CONTAINER_URI="docker://docker.io/rocker/ml:latest"
+        ;;
+esac
 
 # Initialize environment for execution.
 mkdir -p ${LOG_DIR}
@@ -363,7 +365,6 @@ apptainer exec \
 	--disable-telemetry \
 	--user-data-dir="$VSCODE_DIR" \
 	--log debug \
-	#--cert=/etc/ssl/certs/ca-bundle.crt \
 	"<%= working_dir.to_s %>" || {
 		echo "`date`: Failed to start VSCode container" >> ${JOB_LOG}
 		exit 1

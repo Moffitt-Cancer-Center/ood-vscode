@@ -31,7 +31,6 @@ form:
   # Advanced options toggle
   - show_advanced
   - auto_qos
-  # App-specific parameters below
   - auto_conda
   - v_version
   - working_dir
@@ -93,14 +92,14 @@ attributes:
   v_version:
     display: true
     widget: "select"
-    value: "ml"
+    value: "moffitt-ml"
     label: "VSCode version"
     options:
-      - ["Latest", "latest"]
-      - ["Latest-ML", "ml"]
+      - ["Moffitt-ML", "moffitt-ml"]
+      - ["Rocker-ML", "rocker-ml"]
     help: |
-      - **Latest** - Latest Rocker VSCode build from [dockerhub.moffitt.org]
-      - **Latest-ML** - Latest Rocker VSCode ML container
+      - **Moffitt-ML** - Latest Moffitt VSCode build from [dockerhub.moffitt.org]
+      - **Rocker-ML** - Latest Rocker VSCode ML container
   
   working_dir:
     widget: "path_selector"
