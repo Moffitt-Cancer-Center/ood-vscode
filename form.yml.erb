@@ -1,0 +1,147 @@
+<%
+  # ── Dynamic package list ────────────────────────────────────────────────────
+  # Read data/packages.yml at form-render time so new user-contributed packages
+  # (appended at job-submission time) are visible to all users immediately.
+  require 'yaml'
+  require 'pathname'
+  begin
+    _pkg_file = Pathname.new(__FILE__).dirname.join('data', 'packages.yml')
+    _pkg_data = YAML.safe_load(_pkg_file.read) || {}
+  rescue => _e
+    _pkg_data = {}
+  end
+  _pkg_list    = (_pkg_data['packages'] || []).map { |p| [p['label'].to_s, p['value'].to_s] }
+  _pkg_options = [["-- None --", ""]] + _pkg_list
+%>
+---
+tile:
+  title: "VSCode Server"
+  border_color: "light blue"
+  sub_caption: "Code Smarter"
+
+cluster: "slurm"
+
+form:
+  - bc_num_gpu
+  - auto_cores
+  - auto_mem
+  - bc_num_hours
+  - bc_num_slots
+  - bc_queue
+  # Advanced options toggle
+  - show_advanced
+  - auto_qos
+  # App-specific parameters below
+  - auto_conda
+  - v_version
+  - working_dir
+  - reservation
+  - custom_packages
+  - extra_packages
+  - bypass_custom_build
+
+attributes:
+  auto_cores:
+    value: 1
+    help: Cores to allocate for job.
+  
+  auto_mem:
+    value: "2"
+    help: Memory to allocate for job.
+  
+  bc_num_gpu:
+    widget: check_box
+    checked_value: 1
+    unchecked_value: 0
+    label: "Request a GPU (NVidia A30)"
+  
+  bc_num_hours:
+    widget: "number_field"
+    label: "Runtime [hours]"
+    help: Number of hours to run
+    value: 1
+    min: 1
+    max: 336
+    step: 1
+  
+  bc_num_slots: 1
+  
+  bc_queue: "red"
+  
+  show_advanced:
+    widget: "check_box"
+    label: "Show Advanced Options"
+    help: "Check to show advanced options (QoS and Conda environment)"
+    value: 0
+  
+  auto_conda:
+    placeholder: "Optional: Choose a local Conda env"
+    label: "Conda Env (optional)"
+    help: "Select a conda environment to use in the VSCode container (optional). If selected, the environment will be available inside the container for development."
+  
+  auto_qos:
+    value: "normal"
+    help: "Default is usually fine."
+
+  reservation:
+    widget: "text_field"
+    label: "Enter Reservation Name"
+    value: ""
+    help: "If you have a reservation, enter the reservation name here to use it for this job."
+
+  # App-specific parameters below
+  v_version:
+    display: true
+    widget: "select"
+    value: "ml"
+    label: "VSCode version"
+    options:
+      - ["Latest", "latest"]
+      - ["Latest-ML", "ml"]
+    help: |
+      - **Latest** - Latest Rocker VSCode build from [dockerhub.moffitt.org]
+      - **Latest-ML** - Latest Rocker VSCode ML container
+  
+  working_dir:
+    widget: "path_selector"
+    label: "Working Directory"
+    data-target-file-type: dirs  # Valid values are: files, dirs, or both
+    readonly: false
+    help: "Select your project directory; defaults to $HOME"
+
+  custom_packages:
+    widget: "select"
+    multiple: true
+    label: "Common Ubuntu Packages"
+    help: |
+      Select one or more Ubuntu packages to install in your custom container.
+      Hold **Ctrl** (Windows/Linux) or **Cmd** (macOS) to select multiple packages.
+      A custom Apptainer image will be built on first use and **cached** for subsequent sessions —
+      it will only rebuild when your package selection changes.
+      **New packages you type in the field below are added to this list for all users.**
+      The Apptainer definition file is saved to `~/.local/share/code_server/custom-build/vscode-custom.def`
+      so you can inspect or hand-edit it between sessions.
+    options:
+<% _pkg_options.each do |_lbl, _val| -%>
+      - [<%= _lbl.inspect %>, <%= _val.inspect %>]
+<% end -%>
+
+  extra_packages:
+    widget: "text_field"
+    label: "Additional Ubuntu Packages"
+    value: ""
+    help: |
+      Type any extra Ubuntu package names separated by **spaces or commas**
+      (e.g. `libgeos-dev, libbz2-dev`).
+      Only valid Debian/Ubuntu package-name characters are accepted (letters, digits, `-`, `.`, `+`).
+      **Packages typed here are automatically added to the list above** so all users can find
+      them in future sessions. Leave blank if you have no additional packages beyond those selected above.
+
+  bypass_custom_build:
+    widget: "checkbox"
+    label: "Bypass custom container build"
+    value: "0"
+    help: |
+      Check this box to **skip** building a custom container and launch with the plain base
+      VSCode image instead.  Use this to recover if a previous custom build fails or
+      causes launch issues.
