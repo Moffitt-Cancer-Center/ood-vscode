@@ -26,7 +26,7 @@ function toggle_advanced_options() {
 
   // working_dir: collect BOTH the form-group (text input) AND the path
   // selector button container that OOD renders as a sibling in the DOM.
-  let working_dir_input     = $('#batch_connect_session_context_working_dir');
+  let working_dir_input = $('#batch_connect_session_context_working_dir');
   let working_dir_form_group = working_dir_input.closest('.form-group');
 
   // OOD inserts the "Select Path" button launcher in one of these ways
