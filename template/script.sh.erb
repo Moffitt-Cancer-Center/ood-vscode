@@ -358,8 +358,8 @@ echo "`date`: Starting up VSCode..." >> ${JOB_LOG}
 apptainer exec \
 	--nv \
 	--hostname "vscode-$(hostname)-${SESSION_ID}" \
-	--memory="<%= context.auto_mem %>G" \
-	--memory-swap="<%= context.auto_mem %>G" \
+	--memory="<%= auto_mem %>G" \
+	--memory-swap="<%= auto_mem %>G" \
 	--fakeroot \
 	-B "${BIND_POINTS}" \
 	"$VSCODE_CONTAINER_URI" \
