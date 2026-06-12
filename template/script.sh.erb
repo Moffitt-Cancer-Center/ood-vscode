@@ -361,7 +361,6 @@ apptainer exec \
 	--hostname "vscode-$(hostname)" \
 	--memory="${V_MEM}" \
 	--memory-swap="${V_MEM}" \
-	--fakeroot \
 	-B "${BIND_POINTS}" \
 	"$VSCODE_CONTAINER_URI" \
 	code-server \
