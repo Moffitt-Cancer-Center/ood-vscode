@@ -115,6 +115,7 @@ check_conda_config() {
 ###################################################################
 ROOT_DIR="<%= session.staged_root %>"
 V_VERSION="<%= context.v_version %>"
+V_MEM="<%= context.auto_mem %>G"
 LOG_DIR="${ROOT_DIR}/log"
 BIN_DIR="${ROOT_DIR}/bin"
 TMP_DIR=$(mktemp -d)
@@ -358,8 +359,8 @@ echo "`date`: Starting up VSCode..." >> ${JOB_LOG}
 apptainer exec \
 	--nv \
 	--hostname "vscode-$(hostname)-${SESSION_ID}" \
-	--memory="<%= auto_mem %>G" \
-	--memory-swap="<%= auto_mem %>G" \
+	--memory="${V_MEM}" \
+	--memory-swap="${V_MEM}" \
 	--fakeroot \
 	-B "${BIND_POINTS}" \
 	"$VSCODE_CONTAINER_URI" \
