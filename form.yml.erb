@@ -90,16 +90,9 @@ attributes:
 
   # App-specific parameters below
   v_version:
-    display: true
-    widget: "select"
-    value: "moffitt-ml"
+    display: false
+    value: "rocker-ml"
     label: "VSCode version"
-    options:
-      - ["Moffitt-ML", "moffitt-ml"]
-      - ["Rocker-ML", "rocker-ml"]
-    help: |
-      - **Moffitt-ML** - Latest Moffitt VSCode build from [dockerhub.moffitt.org]
-      - **Rocker-ML** - Latest Rocker VSCode ML container
   
   working_dir:
     widget: "path_selector"
@@ -130,17 +123,16 @@ attributes:
     label: "Additional Ubuntu Packages"
     value: ""
     help: |
-      Type any extra Ubuntu package names separated by **spaces or commas**
-      (e.g. `libgeos-dev, libbz2-dev`).
+      Type any extra Ubuntu package names separated by **spaces**
+      (e.g. `libgeos-dev libbz2-dev`).
       Only valid Debian/Ubuntu package-name characters are accepted (letters, digits, `-`, `.`, `+`).
       **Packages typed here are automatically added to the list above** so all users can find
       them in future sessions. Leave blank if you have no additional packages beyond those selected above.
 
   bypass_custom_build:
     widget: "check_box"
-    label: "Bypass custom container build"
+    label: "Load default container"
     value: "0"
     help: |
-      Check this box to **skip** building a custom container and launch with the plain base
-      VSCode image instead.  Use this to recover if a previous custom build fails or
-      causes launch issues.
+      Check this box to load the default container. Use this if a previous custom build fails or causes 
+      launch issues.
