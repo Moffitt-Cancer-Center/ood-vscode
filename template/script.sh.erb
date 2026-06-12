@@ -358,9 +358,6 @@ echo "`date`: Starting up VSCode..." >> ${JOB_LOG}
 # Container startup
 apptainer exec \
 	--nv \
-	--hostname "vscode-$(hostname)" \
-	--memory="${V_MEM}" \
-	--memory-swap="${V_MEM}" \
 	-B "${BIND_POINTS}" \
 	"$VSCODE_CONTAINER_URI" \
 	code-server \
