@@ -10,6 +10,7 @@ function toggle_advanced_options() {
   var custom_packages_group     = $('#batch_connect_session_context_custom_packages').closest('.form-group');
   var extra_packages_group      = $('#batch_connect_session_context_extra_packages').closest('.form-group');
   var bypass_custom_build_group = $('#batch_connect_session_context_bypass_custom_build').closest('.form-group');
+  var enable_fakeroot_exec_group = $('#batch_connect_session_context_enable_fakeroot_exec').closest('.form-group');
 
   // In the deployed OOD version, path_selector.js injects the "Select Path"
   // button as a sibling div AFTER the working_dir .form-group.  The Bootstrap
@@ -30,6 +31,7 @@ function toggle_advanced_options() {
     custom_packages_group.show();
     extra_packages_group.show();
     bypass_custom_build_group.show();
+    enable_fakeroot_exec_group.show();
   } else {
     auto_qos_group.hide();
     v_version_group.hide();
@@ -39,6 +41,7 @@ function toggle_advanced_options() {
     custom_packages_group.hide();
     extra_packages_group.hide();
     bypass_custom_build_group.hide();
+    enable_fakeroot_exec_group.hide();
   }
 }
 

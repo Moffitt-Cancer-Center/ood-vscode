@@ -38,6 +38,7 @@ form:
   - custom_packages
   - extra_packages
   - bypass_custom_build
+  - enable_fakeroot_exec
 
 attributes:
   auto_cores:
@@ -136,3 +137,13 @@ attributes:
     help: |
       Check this box to load the default container. Use this if a previous custom build fails or causes 
       launch issues.
+
+  enable_fakeroot_exec:
+    widget: "check_box"
+    label: "Enable fakeroot at runtime"
+    value: "0"
+    help: |
+      Check this box to launch VSCode with `apptainer exec --fakeroot`.
+      This requires cluster support for user namespaces plus `/etc/subuid` and `/etc/subgid`
+      mappings for your account. If prerequisites are missing, job startup will fail with
+      a clear message in the startup log.
